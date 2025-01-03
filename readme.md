@@ -1,29 +1,96 @@
-# Setup Instructions
+## Endpoints
 
-## Databases
+- GET /book will return an array of books
+- POST /book with request body 
 
-See application properties [file](./src/main/resources/application.properties) for database connection information. Update `spring.datasource.url`, `spring.datasource.username` and `spring.datasource.password` accordingly.
+```json
+{
+  "id": 1,
+  "title": "Book B",
+  "author": "Peter",
+  "publishedDate": "2021-01-01"
+}
+```
 
-The setup is using PostgreSQL. Use the following SQL Commands to setup a database.
+See the RestController class file [here](./src/main/java/com/example/demo/controller/BookController.java).
+# Setup Instructions (Normal Docker)
+
+## STEP 1: Create the dockerfile
+
+Create the docker file for java spring boot. Fill in the blank.
+```dockerfile
+FROM eclipse-temurin:17-jdk-jammy
+WORKDIR /app
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
+COPY src ./src
+RUN <<install the packages>>
+CMD ["./mvnw", "spring-boot:run"]
+```
+
+## Step 2 Build the docker image
+
+```docker build -t "springboot:latest" .```
+
+## Step 3 Create a docker container for postgres, and initialise it
+
+```docker run -d -p 5122:5432 postgis/postgis:15-3.3```
+
+The setup is using PostgreSQL. Use the following SQL Commands on localhost:5122 to setup a database.
 ```sql
 CREATE DATABASE demodb;
 CREATE USER demouser WITH ENCRYPTED PASSWORD 'password';
 GRANT ALL PRIVILEGES ON DATABASE demodb to demouser; 
 ```
 
-The `spring.jpa.hibernate.ddl-auto=create` configuration will automatically create a table based on the @Entity annotated class file located [here](./src/main/java/com/example/demo/entity/Book.java).
+## Step 4 Create a docker container for springboot, get it to connect to db
 
-## Run Spring Application
+```docker run -d -p 8080:8080 springboot:latest```
 
-On your Terminal, navigate to the root directory of this project and run `./mvnw spring-boot:run` to start the project.
+## Step 5 Check if app is initialised using docker log
 
-## Endpoints
+## Step 6 Try to use the endpoints
 
-- GET /book will return an array of books
-- POST /book with request body `{
-"title":"Book B",
-"author":"Peter",
-"publishedDate":"2021-01-01T00:00:00.000"
-}`
+# Setup Instructions (Docker Compose)
 
-See the RestController class file [here](./src/main/java/com/example/demo/controller/BookController.java).
+## STEP 1: Create the docker-compose.yml
+
+```yml
+version: '3.8'
+services:
+  postgres:
+    container_name: spring_demo_db
+    image: postgis/postgis:15-3.3
+    restart: always
+    environment:
+      - POSTGRES_USER=demouser
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=demodb
+    ports:
+      - "5122:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+  app:
+    container_name: spring_demo_app    
+    build:
+      dockerfile: ./Dockerfile
+    depends_on:
+      - postgres
+    dns:
+      - 8.8.8.8
+    ports:
+      - "8088:8080"
+```
+
+## STEP 2: Run docker compose
+
+Navigate to the same directory as `docker-compose.yml` file and run the following command:
+
+```sh
+docker compose up
+```
+
+If you change any code/content, use the `--build` flag:
+
+```sh
+docker compose up --build
