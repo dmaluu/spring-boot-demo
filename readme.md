@@ -53,6 +53,9 @@ GRANT ALL PRIVILEGES ON DATABASE demodb to demouser;
 
 # Setup Instructions (Docker Compose)
 
+## STEP 0: Remove the previous docker images
+```docker rm <spring boot container>```
+
 ## STEP 1: Create the docker-compose.yml
 
 ```yml
